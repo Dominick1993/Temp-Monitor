@@ -8,4 +8,8 @@
     tools:context="com.labuda.tempmonitor.MainActivity"
     tools:showIn="@layout/app_bar_main">
 
+    <TextView
+        android:id="@+id/debug_list_of_devices"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 </android.support.constraint.ConstraintLayout>
