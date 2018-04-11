@@ -5,25 +5,32 @@ import android.arch.persistence.room.Room
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.support.design.widget.NavigationView
 import android.support.v4.view.GravityCompat
+import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.app.ActionBarDrawerToggle
 import android.support.v7.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
 import com.labuda.tempmonitor.db.AppDatabase
 import com.labuda.tempmonitor.db.entities.Device
+import com.labuda.tempmonitor.rest.albrecht.AlbrechtRepository
+import com.labuda.tempmonitor.rest.albrecht.entities.TemperatureAndHumidity
 import com.orhanobut.hawk.Hawk
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.app_bar_main.*
 import kotlinx.android.synthetic.main.content_main.*
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     private val db = Room.databaseBuilder(this, AppDatabase::class.java, "db")
             .allowMainThreadQueries()
             .build()
+
+    private lateinit var currentDevice: Device
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,6 +40,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val toggle = ActionBarDrawerToggle(
                 this, drawer_layout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close)
         drawer_layout.addDrawerListener(toggle)
+
         toggle.syncState()
 
         setSupportActionBar(toolbar)
@@ -43,15 +51,60 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         val currentDeviceAddress: String = Hawk.get("currentDevice", "")
 
-        val currentDevice: Device
         if (currentDeviceAddress != "") {
             currentDevice = db.deviceDao().getDeviceByAddress(currentDeviceAddress)
-            debug_list_of_devices.text = currentDevice.toString()
-        } else {
-            debug_list_of_devices.text = getString(R.string.no_device_added_yet)
+            device_name.text = currentDevice.name
         }
 
+        refreshGauges()
 
+        swipe_refresh.setOnRefreshListener(object: SwipeRefreshLayout.OnRefreshListener {
+            override fun onRefresh() {
+                refreshGauges()
+                swipe_refresh.isRefreshing = false
+            }
+
+
+        })
+
+    }
+
+    fun refreshGauges() {
+        if (::currentDevice.isInitialized) {
+            val tempAndHumidity: Call<TemperatureAndHumidity>
+
+            when (currentDevice.serverType) {
+                ServerType.ALBRECHT -> {
+                    tempAndHumidity = AlbrechtRepository(currentDevice.address).getService().getTemperatueAndHumidity()
+                }
+            }
+
+            tempAndHumidity.enqueue(object : Callback<TemperatureAndHumidity> {
+                override fun onFailure(call: Call<TemperatureAndHumidity>?, t: Throwable?) {
+
+                }
+
+                override fun onResponse(call: Call<TemperatureAndHumidity>?, response: Response<TemperatureAndHumidity>?) {
+                    val temperature: Float = response?.body()?.temperature!!
+                    val ratio = temperature.toInt() / 5
+                    val temperatureStartValue: Int = ratio * 5
+                    val temperatureEndValue: Int = (ratio + 1) * 5
+
+                    temperature_gauge.value = (temperature * 100).toInt()
+                    temperature_gauge.startValue = temperatureStartValue * 100
+                    temperature_gauge.endValue = temperatureEndValue * 100
+
+                    current_temperature.text = "%.2f".format(temperature)
+                    current_temperature_start_value.text = temperatureStartValue.toString()
+                    current_temperature_end_value.text = temperatureEndValue.toString()
+
+
+                    val pointsize = response?.body()?.humidity?.times(humidity_gauge.sweepAngle)?.toInt()!! / 100
+                    humidity_gauge.pointSize = pointsize
+                    current_humidity.setText("%.2f".format(response?.body()?.humidity!!))
+                }
+            })
+        }
     }
 
     override fun onBackPressed() {

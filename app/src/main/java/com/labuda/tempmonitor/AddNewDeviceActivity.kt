@@ -59,7 +59,6 @@ class AddNewDeviceActivity : AppCompatActivity() {
                             }
                         })
                     } catch (e: IllegalArgumentException) {
-                        print(e)
                     }
                 }
             }
@@ -67,8 +66,8 @@ class AddNewDeviceActivity : AppCompatActivity() {
 
         add_new_device_add_button.setOnClickListener({ _ ->
 
-            val newDevice = Device(add_new_device_name.text.toString(),
-                    add_new_device_address.text.toString(),
+            val newDevice = Device(add_new_device_address.text.toString(),
+                    add_new_device_name.text.toString(),
                     getServerType(),
                     Date())
 

@@ -87,9 +87,11 @@
     <string name="pref_ringtone_silent">Silent</string>
 
     <string name="pref_title_vibrate">Vibrate</string>
-    <string name="device_address">Device address:</string>
-    <string name="device_name">Device name:</string>
+    <string name="device_address_input_label">Device address:</string>
+    <string name="device_name_input_label">Device name:</string>
     <string name="device_name_will_appear">Device name will appear here</string>
     <string name="no_device_added_yet">No device added yet</string>
-    <string name="server_type">Server type:</string>
+    <string name="server_type_input_label">Server type:</string>
+    <string name="humidity">Humidity</string>
+    <string name="temperaturey">Temperature</string>
 </resources>
