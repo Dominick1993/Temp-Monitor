@@ -40,10 +40,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val toggle = ActionBarDrawerToggle(
                 this, drawer_layout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close)
         drawer_layout.addDrawerListener(toggle)
-
         toggle.syncState()
-
-        setSupportActionBar(toolbar)
 
         nav_view.setNavigationItemSelectedListener(this)
 
@@ -51,9 +48,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         val currentDeviceAddress: String = Hawk.get("currentDevice", "")
 
+        // Obtain current device and set the labels in UI
         if (currentDeviceAddress != "") {
             currentDevice = db.deviceDao().getDeviceByAddress(currentDeviceAddress)
             device_name.text = currentDevice.name
+
+            val navigationView: NavigationView = findViewById(R.id.nav_view)
+            navigationView.menu.findItem(R.id.nav_current_device).title = currentDevice.name
         }
 
         refreshGauges()
@@ -90,9 +91,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     val temperatureStartValue: Int = ratio * 5
                     val temperatureEndValue: Int = (ratio + 1) * 5
 
-                    temperature_gauge.value = (temperature * 100).toInt()
                     temperature_gauge.startValue = temperatureStartValue * 100
                     temperature_gauge.endValue = temperatureEndValue * 100
+                    temperature_gauge.value = (temperature * 100).toInt()
 
                     current_temperature.text = "%.2f".format(temperature)
                     current_temperature_start_value.text = temperatureStartValue.toString()
@@ -100,8 +101,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
 
                     val pointsize = response?.body()?.humidity?.times(humidity_gauge.sweepAngle)?.toInt()!! / 100
+                    current_humidity.text = "%.2f".format(response?.body()?.humidity!!)
                     humidity_gauge.pointSize = pointsize
-                    current_humidity.setText("%.2f".format(response?.body()?.humidity!!))
                 }
             })
         }
